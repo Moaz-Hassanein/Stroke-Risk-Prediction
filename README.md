@@ -203,3 +203,9 @@ pip install pandas numpy matplotlib seaborn scikit-learn xgboost imbalanced-lear
 ## 📄 License & Disclaimer
 
 This project is for **educational and research purposes only** and is **not intended for clinical or diagnostic use**. Predictions from these models should never substitute professional medical judgment.
+
+## 🚀 Live Demo
+
+Try the deployed application here:
+
+**🔗 https://moaz-hassanein-stroke-risk-prediction-app-9gaexv.streamlit.app/**
