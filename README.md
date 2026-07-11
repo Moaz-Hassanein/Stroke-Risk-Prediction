@@ -102,9 +102,9 @@ Stroke-Risk-Prediction/
 | Model | Accuracy | Recall | F1-Score | Notes |
 |---|---|---|---|---|
 | Random Forest | 91.5% | 16% | Low | High accuracy, but misses most stroke cases |
-| XGBoost | — | Improved | — | Better recall than RF, still limited |
-| AdaBoost | — | Improved | — | Similar limitation |
-| LDA | Lower | 80% | — | High recall, lower accuracy |
+| XGBoost | 85.1% | Improved | Low | Better recall than RF, still limited |
+| AdaBoost | 88.1% | Improved | Improved | Similar limitation |
+| LDA | 73.7% | 80% | 22.9% | High recall, lower accuracy |
 | **Logistic Regression (Final)** | 75.3% | **80%** | **0.241 (highest)** | Best balance for clinical priority on recall |
 
 > **Final model:** Logistic Regression was selected as the production model, prioritizing recall (sensitivity) to minimize missed stroke diagnoses — the most clinically important failure mode — while retaining a competitive F1-score. Saved as `logistic_regression_model.pkl`.
@@ -197,13 +197,6 @@ pip install pandas numpy matplotlib seaborn scikit-learn xgboost imbalanced-lear
 - Add brain-region extraction / skull-stripping as a CT preprocessing step to reduce background/skull activation.
 - Explore ensemble or multimodal approaches combining tabular clinical risk with CT imaging findings.
 - Deploy both models behind a unified inference API, using the artifacts published on [Hugging Face](https://huggingface.co/Moaz-Hassanein/stroke-risk-prediction).
-
----
-
-## 👤 Author
-
-**Moaz Hassanein**
-🤗 Hugging Face: [Moaz-Hassanein](https://huggingface.co/Moaz-Hassanein/stroke-risk-prediction)
 
 ---
 
