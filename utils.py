@@ -244,7 +244,20 @@ def _manual_one_hot(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def predict_tabular(model, X_processed: pd.DataFrame):
-    """Run inference exactly as in the notebook: predict_proba + threshold."""
+    """Run inference exactly as in the notebook: predict_proba + threshold.
+
+    Compatibility note: a LogisticRegression model pickled with a different
+    scikit-learn version can come back missing the internal `multi_class`
+    attribute that predict_proba relies on (AttributeError:
+    'LogisticRegression' object has no attribute 'multi_class'). This does
+    not affect the model's learned weights — it's purely a version-skew
+    artifact of unpickling — so we defensively restore the attribute the
+    fitted estimator originally used ('ovr' for a binary classifier) before
+    calling predict_proba. No preprocessing or model-loading logic changes.
+    """
+    if not hasattr(model, "multi_class"):
+        model.multi_class = "ovr" if getattr(model, "classes_", [0, 1]).__len__() <= 2 else "auto"
+
     proba = model.predict_proba(X_processed.values)[0]
     stroke_proba = float(proba[1])
     prediction = int(stroke_proba >= TABULAR_THRESHOLD)

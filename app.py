@@ -59,6 +59,38 @@ CUSTOM_CSS = """
         padding: 0.9rem 1.1rem; font-size: 0.9rem; color: #7a1f1f;
     }
     div[data-testid="stSidebarNav"] { display: none; }
+
+    /* --- Home page: hero & educational content --- */
+    .hero-box {
+        background: linear-gradient(135deg, #1a2b4c 0%, #2c4a7c 55%, #3d6bb3 100%);
+        border-radius: 18px; padding: 2.6rem 2.4rem; color: white;
+        margin-bottom: 1.6rem; box-shadow: 0 6px 24px rgba(26,43,76,0.25);
+    }
+    .hero-title { font-size: 2.3rem; font-weight: 800; margin: 0 0 0.4rem 0; }
+    .hero-subtitle { font-size: 1.05rem; font-weight: 400; color: #dce6f7; max-width: 720px; }
+    .hero-badges { margin-top: 1rem; }
+    .hero-badge {
+        display: inline-block; background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.28); border-radius: 999px;
+        padding: 0.3rem 0.85rem; font-size: 0.82rem; margin-right: 0.5rem;
+        margin-bottom: 0.4rem;
+    }
+    .info-card {
+        background: white; border-radius: 14px; padding: 1.1rem 1.3rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); border: 1px solid #eef1f6;
+        height: 100%;
+    }
+    .info-card h4 { margin: 0 0 0.5rem 0; color: #1a2b4c; font-size: 1.02rem; }
+    .info-card ul { margin: 0; padding-left: 1.1rem; }
+    .info-card li { margin-bottom: 0.35rem; font-size: 0.93rem; color: #33425c; }
+    .subsection-title {
+        font-size: 1.15rem; font-weight: 700; color: #1a2b4c;
+        margin: 1.6rem 0 0.7rem 0;
+    }
+    .why-early-box {
+        background: #eef4ff; border-left: 5px solid #3d6bb3; border-radius: 8px;
+        padding: 1rem 1.2rem; font-size: 0.95rem; color: #1a2b4c;
+    }
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
@@ -80,6 +112,19 @@ def disclaimer():
 # Sidebar navigation
 # ---------------------------------------------------------------------------
 
+# Session state default so the Home page's "Start Prediction" button can
+# jump to the prediction page without altering how navigation itself works.
+if "nav_page" not in st.session_state:
+    st.session_state["nav_page"] = "🏠 Home"
+
+# If a page switch was requested (e.g. via the Home page CTA button) on the
+# previous run, apply it now — BEFORE the radio widget below is instantiated.
+# (Streamlit forbids writing to a widget's session_state key after that
+# widget has already been created in the same run, so the request is staged
+# in "pending_nav" by the button and consumed here on the following rerun.)
+if "pending_nav" in st.session_state:
+    st.session_state["nav_page"] = st.session_state.pop("pending_nav")
+
 with st.sidebar:
     st.markdown("## 🧠 Stroke Risk AI")
     st.caption("ML/DL-powered stroke risk assessment dashboard")
@@ -92,6 +137,7 @@ with st.sidebar:
             "📚 Disease Information",
         ],
         label_visibility="collapsed",
+        key="nav_page",
     )
     st.markdown("---")
     st.caption("Artifacts expected in `/models` and `/data` — see README.")
@@ -100,54 +146,183 @@ with st.sidebar:
 # HOME
 # ===========================================================================
 if page == "🏠 Home":
-    st.markdown('<div class="section-title">Stroke Risk AI — Overview</div>', unsafe_allow_html=True)
 
-    st.write(
-        "This dashboard provides a **stroke risk assessment system** based on "
-        "patient clinical and demographic information."
+    # --- Hero section --------------------------------------------------
+    st.markdown(
+        """
+        <div class="hero-box">
+            <div class="hero-title">🧠 Stroke Risk AI</div>
+            <div class="hero-subtitle">
+                An explainable machine learning &amp; deep learning platform that
+                estimates stroke risk from patient clinical data and CT brain scans —
+                built to make risk factors and predictions easy to understand.
+            </div>
+            <div class="hero-badges">
+                <span class="hero-badge">📋 Clinical Risk Prediction</span>
+                <span class="hero-badge">🩻 CT Scan Analysis</span>
+                <span class="hero-badge">🔍 Explainable AI (LIME)</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
+
+    cta_col, _ = st.columns([1, 2])
+    with cta_col:
+        if st.button("🚀 Start Prediction", use_container_width=True, type="primary"):
+            st.session_state["pending_nav"] = "📋 Tabular Risk Prediction"
+            st.rerun()
 
     st.markdown("---")
 
-    st.markdown("#### 📋 Tabular Risk Model")
+    # --- What is a stroke? ----------------------------------------------
+    st.markdown('<div class="section-title">What Is a Stroke?</div>', unsafe_allow_html=True)
     st.write(
-        "A **Logistic Regression** classifier trained on patient clinical/demographic "
-        "data including age, glucose level, BMI, hypertension, heart disease, and "
-        "lifestyle factors to estimate stroke risk. The model uses explainable "
-        "machine learning with LIME to highlight the factors influencing each prediction."
+        "A **stroke** occurs when the blood supply to part of the brain is interrupted "
+        "or reduced, preventing brain tissue from getting oxygen and nutrients. Brain "
+        "cells begin to die within minutes, which is why a stroke is a **medical "
+        "emergency** — fast recognition and treatment can greatly reduce brain damage "
+        "and other complications. Strokes are broadly grouped into **ischemic** "
+        "(caused by a blocked artery) and **hemorrhagic** (caused by a leaking or "
+        "burst blood vessel)."
     )
 
-    disclaimer()
+    # --- Symptoms & risk factors -----------------------------------------
+    st.markdown('<div class="subsection-title">⚠️ Common Symptoms</div>', unsafe_allow_html=True)
+    sym_col, risk_col = st.columns(2)
 
-    st.markdown("#### System status")
-
-    tab_art = utils.load_tabular_artifacts()
-
-    s1, s2, s3, s4 = st.columns(4)
-
-    def status_chip(col, label, ok):
-        with col:
-            st.metric(label, "✅ Ready" if ok else "❌ Missing")
-
-    status_chip(s1, "LR Model", tab_art["model"] is not None)
-    status_chip(s2, "Encoder", tab_art["encoder"] is not None)
-    status_chip(s3, "Scaler", tab_art["scaler"] is not None)
-    status_chip(
-        s4,
-        "Dataset CSV",
-        os.path.exists(os.path.join(DATA_DIR, "stroke_data_cleaned.csv"))
-    )
-
-    missing = tab_art["errors"]
-
-    if missing:
+    with sym_col:
         st.markdown(
-            '<div class="missing-box"><b>Missing artifacts detected:</b><br>' +
-            "<br>".join(f"• {m}" for m in missing) +
-            "<br><br>See the README for exactly which files to place in <code>/models</code> "
-            "and <code>/data</code>.</div>",
+            """
+            <div class="info-card">
+                <h4>🚨 Recognize the warning signs</h4>
+                <ul>
+                    <li>Sudden weakness or numbness in the face, arm, or leg — often on one side of the body</li>
+                    <li>Sudden difficulty speaking or understanding speech</li>
+                    <li>Sudden vision problems in one or both eyes</li>
+                    <li>Sudden severe headache with no known cause</li>
+                    <li>Sudden dizziness, loss of balance, or trouble walking</li>
+                    <li>Sudden confusion or trouble with coordination</li>
+                </ul>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
+
+    with risk_col:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h4>📈 Major Risk Factors</h4>
+                <ul>
+                    <li>High blood pressure (hypertension)</li>
+                    <li>Diabetes / high blood glucose</li>
+                    <li>Smoking and tobacco use</li>
+                    <li>Obesity and physical inactivity</li>
+                    <li>High cholesterol</li>
+                    <li>Heart disease and irregular heart rhythm</li>
+                    <li>Increasing age and family history</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # --- Prevention -------------------------------------------------------
+    st.markdown('<div class="subsection-title">🛡️ Prevention Tips</div>', unsafe_allow_html=True)
+    p1, p2, p3 = st.columns(3)
+    with p1:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h4>🥗 Healthy Lifestyle</h4>
+                <ul>
+                    <li>Eat a balanced, low-sodium, low-fat diet</li>
+                    <li>Exercise regularly (aim for 150+ min/week)</li>
+                    <li>Maintain a healthy body weight</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with p2:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h4>💊 Manage Conditions</h4>
+                <ul>
+                    <li>Control blood pressure and blood glucose</li>
+                    <li>Manage cholesterol levels</li>
+                    <li>Take prescribed medications consistently</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with p3:
+        st.markdown(
+            """
+            <div class="info-card">
+                <h4>🩺 Stay Proactive</h4>
+                <ul>
+                    <li>Quit smoking and limit alcohol intake</li>
+                    <li>Schedule regular medical checkups</li>
+                    <li>Know your personal and family risk factors</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # --- Why early prediction matters -------------------------------------
+    st.markdown('<div class="subsection-title">⏱️ Why Early Prediction Matters</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="why-early-box">
+            Early identification of stroke risk allows patients and clinicians to act
+            <b>before</b> a stroke happens — adjusting lifestyle, starting preventive
+            treatment, or scheduling closer monitoring. Because stroke damage progresses
+            within minutes, catching risk factors early — through clinical data or
+            CT-based screening — can support timely intervention, potentially
+            reducing severity, long-term disability, and the chance of a first or
+            recurrent stroke.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+    disclaimer()
+
+    # --- System status (existing functionality, unchanged) -----------------
+    with st.expander("⚙️ System status — model & data artifacts", expanded=False):
+        tab_art = utils.load_tabular_artifacts()
+
+        s1, s2, s3, s4 = st.columns(4)
+
+        def status_chip(col, label, ok):
+            with col:
+                st.metric(label, "✅ Ready" if ok else "❌ Missing")
+
+        status_chip(s1, "LR Model", tab_art["model"] is not None)
+        status_chip(s2, "Encoder", tab_art["encoder"] is not None)
+        status_chip(s3, "Scaler", tab_art["scaler"] is not None)
+        status_chip(
+            s4,
+            "Dataset CSV",
+            os.path.exists(os.path.join(DATA_DIR, "stroke_data_cleaned.csv"))
+        )
+
+        missing = tab_art["errors"]
+
+        if missing:
+            st.markdown(
+                '<div class="missing-box"><b>Missing artifacts detected:</b><br>' +
+                "<br>".join(f"• {m}" for m in missing) +
+                "<br><br>See the README for exactly which files to place in <code>/models</code> "
+                "and <code>/data</code>.</div>",
+                unsafe_allow_html=True,
+            )
 
 
 # ===========================================================================
