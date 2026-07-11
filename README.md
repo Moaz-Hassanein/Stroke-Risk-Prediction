@@ -102,9 +102,9 @@ Stroke-Risk-Prediction/
 | Model | Accuracy | Recall | F1-Score | Notes |
 |---|---|---|---|---|
 | Random Forest | 91.5% | 16% | Low | High accuracy, but misses most stroke cases |
-| XGBoost | 85.1% | Improved | — | Better recall than RF, still limited |
-| AdaBoost | 88.1% | Improved | — | Similar limitation |
-| LDA | 73.7% | 80% | — | High recall, lower accuracy |
+| XGBoost | 85.1% | Improved | Low | Better recall than RF, still limited |
+| AdaBoost | 88.1% | Improved | Improved | Similar limitation |
+| LDA | 73.7% | 80% | 22.9% | High recall, lower accuracy |
 | **Logistic Regression (Final)** | 75.3% | **80%** | **0.241 (highest)** | Best balance for clinical priority on recall |
 
 > **Final model:** Logistic Regression was selected as the production model, prioritizing recall (sensitivity) to minimize missed stroke diagnoses — the most clinically important failure mode — while retaining a competitive F1-score. Saved as `logistic_regression_model.pkl`.
