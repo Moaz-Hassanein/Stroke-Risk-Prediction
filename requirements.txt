@@ -8,4 +8,3 @@ seaborn>=0.12
 Pillow>=10.0
 lime>=0.2.0.1
 huggingface_hub>=0.23
-tensorflow==2.19.0
