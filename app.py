@@ -133,6 +133,7 @@ with st.sidebar:
         [
             "🏠 Home",
             "📋 Tabular Risk Prediction",
+            "🩻 CT Scan Prediction",
             "📊 Dataset Exploration",
             "📚 Disease Information",
         ],
@@ -167,10 +168,14 @@ if page == "🏠 Home":
         unsafe_allow_html=True,
     )
 
-    cta_col, _ = st.columns([1, 2])
-    with cta_col:
+    cta_col1, cta_col2, _ = st.columns([1, 1, 1.4])
+    with cta_col1:
         if st.button("🚀 Start Prediction", use_container_width=True, type="primary"):
             st.session_state["pending_nav"] = "📋 Tabular Risk Prediction"
+            st.rerun()
+    with cta_col2:
+        if st.button("🩻 CT Scan Prediction", use_container_width=True):
+            st.session_state["pending_nav"] = "🩻 CT Scan Prediction"
             st.rerun()
 
     st.markdown("---")
@@ -297,8 +302,9 @@ if page == "🏠 Home":
     # --- System status (existing functionality, unchanged) -----------------
     with st.expander("⚙️ System status — model & data artifacts", expanded=False):
         tab_art = utils.load_tabular_artifacts()
+        _, _, ct_status_error = utils.load_ct_model()
 
-        s1, s2, s3, s4 = st.columns(4)
+        s1, s2, s3, s4, s5 = st.columns(5)
 
         def status_chip(col, label, ok):
             with col:
@@ -307,13 +313,16 @@ if page == "🏠 Home":
         status_chip(s1, "LR Model", tab_art["model"] is not None)
         status_chip(s2, "Encoder", tab_art["encoder"] is not None)
         status_chip(s3, "Scaler", tab_art["scaler"] is not None)
+        status_chip(s4, "CT Model", ct_status_error is None)
         status_chip(
-            s4,
+            s5,
             "Dataset CSV",
             os.path.exists(os.path.join(DATA_DIR, "stroke_data_cleaned.csv"))
         )
 
-        missing = tab_art["errors"]
+        missing = list(tab_art["errors"])
+        if ct_status_error:
+            missing.append(f"CT model: {ct_status_error}")
 
         if missing:
             st.markdown(
@@ -446,6 +455,74 @@ elif page == "📋 Tabular Risk Prediction":
                         st.warning(f"LIME explanation unavailable: {e}")
             except Exception as e:
                 st.error(f"Prediction failed: {e}")
+
+# ===========================================================================
+# CT SCAN PREDICTION
+# ===========================================================================
+elif page == "🩻 CT Scan Prediction":
+    st.markdown('<div class="section-title">🩻 CT Scan Stroke Prediction</div>', unsafe_allow_html=True)
+    st.write("Upload a brain CT scan image. The fine-tuned ResNet50 model will estimate "
+             "the probability that the scan shows signs of stroke.")
+    disclaimer()
+
+    ct_model, ct_weights_name, ct_error = utils.load_ct_model()
+
+    if ct_model is None:
+        st.error("CT scan model is not available.")
+        st.info(f"Details: {ct_error}" if ct_error else
+                "Place `best_resnet50_finetuned.weights.h5` in `/models`.")
+    else:
+        st.caption(f"Loaded weights: `{ct_weights_name}`")
+
+        with st.form("ct_form"):
+            uploaded_ct = st.file_uploader(
+                "Upload a CT scan image", type=["jpg", "jpeg", "png"], key="ct_uploader"
+            )
+            predict_clicked = st.form_submit_button(
+                "Predict CT Scan Result", use_container_width=True
+            )
+
+        img_col, result_col = st.columns([1, 1.4])
+
+        pil_image = None
+        if uploaded_ct is not None:
+            try:
+                pil_image = Image.open(uploaded_ct)
+                with img_col:
+                    st.image(pil_image, caption="Uploaded CT Scan", use_container_width=True)
+            except Exception as e:
+                st.error(f"Could not read the uploaded image: {e}")
+
+        if predict_clicked:
+            if pil_image is None:
+                st.warning("Please upload a CT scan image first.")
+            else:
+                try:
+                    with st.spinner("Analyzing CT scan..."):
+                        preprocessed = utils.preprocess_ct_image(pil_image)
+                        prediction, prob = utils.predict_ct(ct_model, preprocessed)
+
+                    label = utils.CT_CLASS_NAMES[prediction]
+                    confidence = prob if prediction == 1 else 1 - prob
+                    risk_label, risk_color = utils.risk_level(prob)
+
+                    with result_col:
+                        st.markdown(
+                            f'<div class="risk-banner" style="background:{risk_color}">'
+                            f'Prediction: {label} &nbsp;|&nbsp; Stroke Probability: {prob*100:.1f}% '
+                            f'&nbsp;|&nbsp; {risk_label}</div>', unsafe_allow_html=True,
+                        )
+                        m1, m2, m3 = st.columns(3)
+                        m1.metric("Prediction", label)
+                        m2.metric("Stroke Probability", f"{prob*100:.1f}%")
+                        m3.metric("Confidence", f"{confidence*100:.1f}%")
+
+                        st.markdown("**Recommendation**")
+                        st.info(utils.recommendation_text(prob, prediction))
+                except Exception as e:
+                    st.error(f"Prediction failed: {e}")
+        else:
+            st.info("Upload a CT scan image (JPG or PNG), then click **Predict CT Scan Result**.")
 
 # ===========================================================================
 # DATASET EXPLORATION

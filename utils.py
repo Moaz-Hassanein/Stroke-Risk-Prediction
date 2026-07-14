@@ -125,36 +125,52 @@ def load_tabular_artifacts():
 
 @st.cache_resource(show_spinner=False)
 def load_ct_model():
-    """Load the fine-tuned (preferred) or baseline Keras ResNet50 model."""
+    """Build the CT model architecture and load trained weights."""
     import tensorflow as tf
+    from tensorflow.keras.applications import ResNet50
+    from tensorflow.keras.layers import (
+        Input,
+        GlobalAveragePooling2D,
+        Dense,
+        Dropout,
+    )
+    from tensorflow.keras.models import Model
 
-    candidates = [
-        os.path.join(MODELS_DIR, "best_resnet50_finetuned.keras"),
-        os.path.join(MODELS_DIR, "resnet50_baseline.keras"),
-        os.path.join(MODELS_DIR, "best_resnet50_model.keras"),
-    ]
-    for path in candidates:
-        if os.path.exists(path):
-            try:
-                from tensorflow.keras.layers import Dense
+    weights_path = os.path.join(
+        MODELS_DIR,
+        "best_resnet50_finetuned.weights.h5"
+    )
 
-                class FixedDense(Dense):
-                    def __init__(self, *args, **kwargs):
-                        kwargs.pop("quantization_config", None)
-                        super().__init__(*args, **kwargs)
+    if not os.path.exists(weights_path):
+        return None, None, "CT weights file not found."
 
-                model = tf.keras.models.load_model(
-                    path,
-                    compile=False,
-                    safe_mode=False,
-                    custom_objects={
-                        "Dense": FixedDense
-                    }
-                )
-                return model, os.path.basename(path), None
-            except Exception as e:
-                return None, None, f"Failed to load {os.path.basename(path)}: {e}"
-    return None, None, "No CT model file found in /models (expected best_resnet50_finetuned.keras or resnet50_baseline.keras)."
+    try:
+        # Base model
+        base_model = ResNet50(
+            weights="imagenet",
+            include_top=False,
+            input_shape=(224, 224, 3)
+        )
+
+        inputs = Input(shape=(224, 224, 3))
+
+        x = base_model(inputs, training=False)
+
+        base_model.trainable = False
+
+        x = GlobalAveragePooling2D()(x)
+        x = Dense(256, activation="relu")(x)
+        x = Dropout(0.5)(x)
+        outputs = Dense(1, activation="sigmoid")(x)
+
+        model = Model(inputs, outputs)
+
+        model.load_weights(weights_path)
+
+        return model, os.path.basename(weights_path), None
+
+    except Exception as e:
+        return None, None, f"Failed to load CT weights: {e}"
 
 
 # ---------------------------------------------------------------------------
