@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import streamlit as st
+from huggingface_hub import hf_hub_download
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -136,13 +137,13 @@ def load_ct_model():
     )
     from tensorflow.keras.models import Model
 
-    weights_path = os.path.join(
-        MODELS_DIR,
-        "best_resnet50_finetuned.weights.h5"
+    try:
+        weights_path = hf_hub_download(
+        repo_id="Moaz-Hassanein/stroke-risk-prediction",
+        filename="best_resnet50_finetuned.weights.h5",
     )
-
-    if not os.path.exists(weights_path):
-        return None, None, "CT weights file not found."
+    except Exception as e:
+        return None, None, f"Failed to download CT weights: {e}"
 
     try:
         # Base model
