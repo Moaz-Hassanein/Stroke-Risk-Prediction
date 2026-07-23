@@ -36,37 +36,39 @@ The trained artifacts for this project (fine-tuned ResNet50 CT classifier and/or
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
-```
+```text
 Stroke-Risk-Prediction/
 │
-├── Data/
-│   ├── healthcare-dataset-stroke-data.csv     # Raw tabular dataset
-│   ├── stroke_data_cleaned.csv                # Cleaned/preprocessed tabular dataset
-│   └── Brain_Stroke_CT-SCAN_image/            # CT image dataset (Train/Validation/Test)
+├── data/
+│   ├── healthcare-dataset-stroke-data.csv
+│   ├── stroke_data_cleaned.csv
+│  
 │
-├── Models/
-│   ├── scaler.pkl                             # StandardScaler for numeric features
-│   ├── encoder.pkl                            # OneHotEncoder for categorical features
-│   ├── feature_names.pkl                      # Saved feature order for inference
-│   ├── logistic_regression_model.pkl          # Final tabular model
-│   ├── best_resnet50_finetuned.keras          # Final CT image classification model
-│   └── resnet50_baseline.keras                # Baseline (frozen-backbone) CT model
+├── models/
+│   ├── scaler.pkl
+│   ├── encoder.pkl
+│   ├── feature_names.pkl
+│   ├── logistic_regression_model.pkl
+│   
 │
-├── Notebooks/
-│   ├── 1_EDA.ipynb                            # Tabular data exploration
-│   ├── 2_Data_Cleaning.ipynb                  # Tabular data cleaning & preprocessing
-│   ├── 3_Data_Analysis.ipynb                  # Statistical analysis of risk factors
-│   ├── 4_Model_Development.ipynb              # Tabular model training & comparison
-│   ├── 5_LIME_Explainability.ipynb            # LIME explainability for tabular model
-│   ├── 6_CT_EDA.ipynb                         # CT image dataset exploration
-│   ├── 7_CT_Model_Development.ipynb           # ResNet50 transfer learning & fine-tuning
-│   └── 8_GradCam_Explainability_CT_Images.ipynb  # Grad-CAM explainability for CT model
+├── notebooks/
+│   ├── 1_EDA.ipynb
+│   ├── 2_Data_Cleaning.ipynb
+│   ├── 3_Data_Analysis.ipynb
+│   ├── 4_Model_Development.ipynb
+│   ├── 5_LIME_Explainability.ipynb
+│   ├── 6_CT_EDA.ipynb
+│   ├── 7_CT_Model_Development.ipynb
+│   └── 8_GradCAM_Explainability_CT_Images.ipynb
 │
+├── app.py
+├── utils.py
+├── explainability.py
+├── requirements.txt
 └── README.md
 ```
-
 ---
 
 ## 🧪 Track 1 — Clinical / Tabular Stroke Prediction
